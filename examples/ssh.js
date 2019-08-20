@@ -1,4 +1,4 @@
-/*	Copyright 2015-2018 Rivoreo
+/*	Copyright 2015-2019 Rivoreo
 
 	Permission is hereby granted, free of charge, to any person obtaining
 	a copy of this software and associated documentation files (the
@@ -144,10 +144,12 @@ connection.on("ready", function() {
 		process.stdin.setRawMode(true);
 	}
 	var options = { pty:window };
-	console.log(options);
 	var channel_callback = function(e, stream) {
 		if(e) throw e;
 		//console.log(stream);
+		if(use_tty && process.stdout.isTTY) process.on("SIGWINCH", function() {
+			stream.setWindow(process.stdout.rows, process.stdout.columns, 0, 0);
+		});
 		stream.on("close", function(status, signal) {
 			process.stderr.write("SSH stream closed\n");
 			connection.end();
@@ -172,7 +174,7 @@ var password = process.stdin.isTTY ? function() {
 	var fd = process.stdin.fd;
 	do {
 		try {
-			if(fs.readSync(fd, buffer, i, 1, 0) < 1) break;//return buffer.toString("utf-8", 0, i);
+			if(fs.readSync(fd, buffer, i, 1, null) < 1) break;//return buffer.toString("utf-8", 0, i);
 		} catch(e) {
 			//console.log(e);
 			if(e.code !== "EAGAIN") throw e;
